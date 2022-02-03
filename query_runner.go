@@ -1,9 +1,33 @@
 package gosqltools
 
-import "database/sql"
+import (
+	"database/sql"
+	"reflect"
+)
 
 type SqlDataSource struct {
 	DB *sql.DB
+}
+
+func ParseQueryResult(result map[string]interface{}, target interface{}) {
+	val := reflect.ValueOf(target)
+	t := val.Type().Elem()
+
+	for i := 0; i < t.NumField(); i++ {
+		tag := t.Field(i).Tag.Get("db")
+		switch result[tag].(type) {
+		case string:
+			val.Elem().FieldByName(t.Field(i).Name).SetString(result[tag].(string))
+		}
+	}
+}
+
+func (ds SqlDataSource) QueryToStruct(querySql string, target interface{}, args ...interface{}) (int, error) {
+	ret, results, err := ds.QueryRunner(querySql, args...)
+	if err == nil {
+		ParseQueryResult(results[0].(map[string]interface{}), target)
+	}
+	return ret, err
 }
 
 func (ds SqlDataSource) QueryRunner(querySql string, args ...interface{}) (int, []interface{}, error) {
