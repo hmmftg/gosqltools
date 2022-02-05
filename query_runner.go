@@ -3,6 +3,8 @@ package gosqltools
 import (
 	"database/sql"
 	"reflect"
+
+	_ "github.com/sijms/go-ora/v2"
 )
 
 type SqlDataSource struct {
@@ -31,7 +33,7 @@ func (ds SqlDataSource) QueryToStruct(querySql string, target interface{}, args 
 	elemType := reflect.TypeOf(target)
 	elemSlice := reflect.MakeSlice(reflect.SliceOf(elemType), 0, len(results))
 	for _, row := range results {
-		newRow := reflect.New(elemType).Elem().Interface()
+		newRow := reflect.New(elemType).Interface()
 		ParseQueryResult(row.(map[string]interface{}), newRow)
 		elemSlice = reflect.Append(elemSlice, reflect.ValueOf(newRow))
 	}
