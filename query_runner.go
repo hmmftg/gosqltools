@@ -11,15 +11,12 @@ type SqlDataSource struct {
 	DB *sql.DB
 }
 
-func ParseQueryResult(result map[string]interface{}, target interface{}) {
-	val := reflect.ValueOf(target)
-	t := val.Type().Elem()
-
+func ParseQueryResult(result map[string]interface{}, t reflect.Type, v reflect.Value) {
 	for i := 0; i < t.NumField(); i++ {
 		tag := t.Field(i).Tag.Get("db")
 		switch result[tag].(type) {
 		case string:
-			val.Elem().FieldByName(t.Field(i).Name).SetString(result[tag].(string))
+			v.FieldByName(t.Field(i).Name).SetString(result[tag].(string))
 		}
 	}
 }
@@ -33,9 +30,9 @@ func (ds SqlDataSource) QueryToStruct(querySql string, target interface{}, args 
 	elemType := reflect.TypeOf(target)
 	elemSlice := reflect.MakeSlice(reflect.SliceOf(elemType), 0, len(results))
 	for _, row := range results {
-		newRow := reflect.New(elemType).Interface()
-		ParseQueryResult(row.(map[string]interface{}), newRow)
-		elemSlice = reflect.Append(elemSlice, reflect.ValueOf(newRow))
+		newRow := reflect.New(elemType).Elem()
+		ParseQueryResult(row.(map[string]interface{}), elemType, newRow)
+		elemSlice = reflect.Append(elemSlice, newRow)
 	}
 
 	return 0, elemSlice.Interface(), nil
