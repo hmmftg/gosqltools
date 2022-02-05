@@ -22,12 +22,20 @@ func ParseQueryResult(result map[string]interface{}, target interface{}) {
 	}
 }
 
-func (ds SqlDataSource) QueryToStruct(querySql string, target interface{}, args ...interface{}) (int, error) {
+func (ds SqlDataSource) QueryToStruct(querySql string, target []interface{}, args ...interface{}) (int, error) {
 	ret, results, err := ds.QueryRunner(querySql, args...)
-	if err == nil {
-		ParseQueryResult(results[0].(map[string]interface{}), target)
+	if err != nil {
+		return ret, err
 	}
-	return ret, err
+
+	for _, row := range results {
+		value := reflect.ValueOf(target).Elem()
+		newRow := reflect.New(value.Type().Elem()).Elem().Interface()
+		ParseQueryResult(row.(map[string]interface{}), newRow)
+		value.Set(reflect.Append(value, reflect.ValueOf(newRow)))
+	}
+
+	return 0, nil
 }
 
 func (ds SqlDataSource) QueryRunner(querySql string, args ...interface{}) (int, []interface{}, error) {
