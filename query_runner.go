@@ -79,6 +79,8 @@ func (ds SqlDataSource) QueryRunner(querySql string, args ...interface{}) (int, 
 				scanArgs[i] = new(sql.NullBool)
 			case "INT4":
 				scanArgs[i] = new(sql.NullInt64)
+			case "DATE":
+				scanArgs[i] = new(sql.NullTime)
 			default:
 				scanArgs[i] = new(sql.NullString)
 			}
@@ -118,6 +120,11 @@ func (ds SqlDataSource) QueryRunner(querySql string, args ...interface{}) (int, 
 
 			if z, ok := (scanArgs[i]).(*sql.NullInt32); ok {
 				masterData[v.Name()] = z.Int32
+				continue
+			}
+
+			if z, ok := (scanArgs[i]).(*sql.NullTime); ok {
+				masterData[v.Name()] = z.Time
 				continue
 			}
 
